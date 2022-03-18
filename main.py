@@ -116,7 +116,7 @@ class Weather:
             info = Weather.getJsonData()
             return Weather.city[0], info['temperatureAir'][0], info['description'][0]
         except:
-            return False
+            return False, False, False
 
 class Date:
     
