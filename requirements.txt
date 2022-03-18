@@ -1,0 +1,4 @@
+Pillow
+pywin32
+requests
+win32gui

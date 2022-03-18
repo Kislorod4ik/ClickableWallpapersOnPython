@@ -1,0 +1,23 @@
+{
+    "version": "v1.0",
+    "weather": [
+        [
+            "Самара",
+            "https://www.gismeteo.ru/weather-samara-4618/"
+        ],
+        [
+            "Тольятти",
+            "https://www.gismeteo.ru/weather-tolyatti-4429/"
+        ],
+        [
+            "Москва",
+            "https://www.gismeteo.ru/weather-moscow-4368/"
+        ]
+    ],
+    "weatherIndex": 0,
+    "themeIndex": 0,
+    "courses": [
+        "USD",
+        "EUR"
+    ]
+}
