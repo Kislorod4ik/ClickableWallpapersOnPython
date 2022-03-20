@@ -114,9 +114,9 @@ class Weather:
     def getData():
         try:
             info = Weather.getJsonData()
-            return Weather.city[0], info['temperatureAir'][0], info['description'][0]
+            return (Weather.city[0], info['temperatureAir'][0], info['description'][0])
         except:
-            return False, False, False
+            return False
 
 class Date:
     
@@ -196,6 +196,8 @@ class Main():
         self.bg = False
         self.bgLastColor = False
         
+        self.openCitys = False
+        
         self.buttons = []
         
     def addButton(self, cord, function, update):
@@ -254,12 +256,9 @@ class Main():
                         if butt['update']:
                             back = True
         return back                
-                
-
-    def start(self):
     
-        self.openCitys = False
-        
+
+    def update(self):
         def cityBtn():
             self.openCitys = True
             
@@ -267,6 +266,7 @@ class Main():
             Weather.setCity( index )
             self.openCitys = False
             cache.put('weatherIndex', index)
+            self.weather = Weather.getData()
        
         def newTheme():
             self.indexTheme += 1
@@ -274,64 +274,71 @@ class Main():
                 self.indexTheme = 0 
             self.theme = Color.getTheme(self.indexTheme)
             cache.put('themeIndex', self.indexTheme)
-       
-        while True:
-            self.buttons = []
-            c2 = False
-            self.genEmpty()
             
-            minutes, H_M, d_m_Y = Date.get('%M', '%H:%M', '%d.%m.%Y' )
-
-            w = self.weight / 2
-            theme = self.theme
-
-            self.setFont( 'font.otf', 100 )
-
-            c = self.setMindText( w , self.height / 3 - 100, Date.getDay(), theme['fg'])
-            
-            courses = Course.getCourse(cache.get('courses',  ['USD', 'EUR']))
-            if courses:
-                self.setFont( 'font.otf', 50 )
-                c2 = self.setMindText( w , c.y2 + 15, '  '.join([ f'{i[0]}: {str(i[1])}' for i in courses ]), theme['fg'])
-                
-                self.draw.line(( min(c.x, c2.x) - 10, c2.y2 + 15,  max(c.x2, c2.x2) + 10, c2.y2 + 15), fill = theme['fg'], width=5)
-            else:
-                self.draw.line(( c.x - 10, c.y2 + 15, c.x2 + 10, c.y2 + 15), fill = theme['fg'], width=5)
-            
-            
-            self.setFont( 'font.otf', 100 )
-            c = self.setMindText( w , (c2.y2 if c2 else c.y2 ) + 30, H_M, theme['fg'])
-            
-            self.setFont( 'font.otf', 45 )
-            c = self.setMindText( w , c.y2 + 20, d_m_Y, theme['fg'])
-            
-            self.setFont( 'font.ttf', 20 )
-            w1, h1 = self.getTextSize('Сменить тему')
-            s = self.setText( self.weight - 5 - w1, self.height - 48 - h1, 'Сменить тему', theme['fg'])
-            self.addButton(s, lambda: newTheme(), True)
-            
-            if not self.openCitys:
-                self.setFont( 'font.otf', 40 )
-                name, temp, info = Weather.getData()
-                if name:
-                    s = self.setText(5, 5, str(name), theme['text'])
-                    self.addButton(s, cityBtn, True)
-                    self.setText(5, s.y2 + 5, f'{str(temp)}° {str(info)}', theme['text'])
-            else:
-                self.setFont( 'font.ttf', 25 )
-                s = self.setText(5, 5, 'Выберите населённый пункт', theme['fg'])
-                tbl = Weather.getCitys()
-                for i in range(len(tbl)):
-                    s = self.setText(10, s.y2 + 5, tbl[i][0], theme['text'])  
-                    self.addButton(s, lambda index = i: setCity(index), True)
-            
-            
-            self.object.save('resources/tmp/temp.png')
-            self.setWallpaper('resources/tmp/temp.png')
-
-            while minutes == Date.get('%M') and not self.onUpdate():
-                time.sleep(0.1)
+        self.buttons = []
+        c2 = False
+        self.genEmpty()
         
+        self.minutes, H_M, d_m_Y = Date.get('%M', '%H:%M', '%d.%m.%Y' )
+
+        w = self.weight / 2
+        theme = self.theme
+
+        self.setFont( 'font.otf', 100 )
+
+        c = self.setMindText( w , self.height / 3 - 100, Date.getDay(), theme['fg'])
+        
+        if self.courses:
+            self.setFont( 'font.otf', 50 )
+            c2 = self.setMindText( w , c.y2 + 15, '  '.join([ f'{i[0]}: {str(i[1])}' for i in self.courses ]), theme['fg'])
+            
+            self.draw.line(( min(c.x, c2.x) - 10, c2.y2 + 15,  max(c.x2, c2.x2) + 10, c2.y2 + 15), fill = theme['fg'], width=5)
+        else:
+            self.draw.line(( c.x - 10, c.y2 + 15, c.x2 + 10, c.y2 + 15), fill = theme['fg'], width=5)
+        
+        
+        self.setFont( 'font.otf', 100 )
+        c = self.setMindText( w , (c2.y2 if c2 else c.y2 ) + 30, H_M, theme['fg'])
+        
+        self.setFont( 'font.otf', 45 )
+        c = self.setMindText( w , c.y2 + 20, d_m_Y, theme['fg'])
+        
+        self.setFont( 'font.ttf', 20 )
+        w1, h1 = self.getTextSize('Сменить тему')
+        s = self.setText( self.weight - 5 - w1, self.height - 48 - h1, 'Сменить тему', theme['fg'])
+        self.addButton(s, lambda: newTheme(), True)
+        
+        if not self.openCitys:
+            self.setFont( 'font.otf', 40 )
+            if self.weather:
+                s = self.setText(5, 5, str(self.weather[0]), theme['text'])
+                self.addButton(s, cityBtn, True)
+                self.setText(5, s.y2 + 5, f'{str(self.weather[1])}° {str(self.weather[2])}', theme['text'])
+        else:
+            self.setFont( 'font.ttf', 25 )
+            s = self.setText(5, 5, 'Выберите населённый пункт', theme['fg'])
+            tbl = Weather.getCitys()
+            for i in range(len(tbl)):
+                s = self.setText(10, s.y2 + 5, tbl[i][0], theme['text'])  
+                self.addButton(s, lambda index = i: setCity(index), True)
+        
+        
+        self.object.save('resources/tmp/temp.png')
+        self.setWallpaper('resources/tmp/temp.png')               
+    
+        
+
+    def start(self):
+        while True:
+            self.courses = Course.getCourse(cache.get('courses',  ['USD', 'EUR']))
+            self.weather = Weather.getData()
+            self.update(  )
+            
+            while self.minutes == Date.get('%M'):
+                if self.onUpdate():
+                    self.update(  )
+                time.sleep(0.1)
+            
         
 if __name__ == "__main__":
     main = Main()
