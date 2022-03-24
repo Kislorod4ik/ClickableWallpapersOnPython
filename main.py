@@ -72,7 +72,7 @@ class Course:
     
     def getJsonData():
         url = 'https://www.cbr-xml-daily.ru/daily_json.js'
-        return requests.get(url, headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}).json()
+        return requests.get(url).json()
     
     def getCourse(args):
         try:
@@ -128,7 +128,7 @@ class Date:
             'Четверг',
             'Пятница',
             'Суббота',
-            'Восскресенье'
+            'Воскресенье'
         ])[datetime.datetime.today().isoweekday() - 1]
         
     def get(*formats):
@@ -140,13 +140,10 @@ class Date:
             back.append( date.strftime(i) )
         return tuple(back)
         
-
 class Color:
-   
-    def hex(hex):
-        hex = hex.lstrip('#')
-        hlen = len(hex)
-        return tuple(int(hex[i:i+int(hlen/3)], 16) for i in range(0, hlen, int(hlen/3)))  
+    def hex(s):
+        n = int(s.lstrip('#'), 16)
+        return (n >> 16, (n >> 8) & 0xff, n & 0xff)
 
     def getThemeList():
         return [
@@ -170,8 +167,8 @@ class Cord:
         self.x2 = x + w
         self.y2 = y + h
         
-    def isInside(self, x, y ):
-        return x >= self.x and x <= self.x2 and y >= self.y and y <= self.y2
+    def isInside(self, x, y):
+      return self.x <= x <= self.x2 and self.y <= y <= self.y2
 
 class Main():
 
@@ -179,7 +176,7 @@ class Main():
     
         user32 = ctypes.windll.user32
         
-        self.weight = user32.GetSystemMetrics(0)
+        self.width = user32.GetSystemMetrics(0)
         self.height = user32.GetSystemMetrics(1)
        
         self.mBuffer = user32.GetKeyState(1)
@@ -206,7 +203,8 @@ class Main():
     def genEmpty(self):
         if not self.bg or self.theme['bg'] != self.bgLastColor:
             color = self.theme['bg']
-            img = Image.new('RGB', (self.weight, self.height), color)
+            img = Image.new('RGB', (self.width, self.height), color)
+            
             self.orig = img
 
         
@@ -237,7 +235,7 @@ class Main():
     def setWallpaper(self, filename):
         ctypes.windll.user32.SystemParametersInfoW(0x0014 , 0, self.path + f'\\{filename}', 2)
 
-    def onUpdate(self):
+    def onUpdate(self, i = 0):
         self.pos = queryMousePosition()
         ctypes.windll.user32.GetKeyState.restype = ctypes.c_ushort
         if ctypes.windll.user32.GetKeyState(1) != self.mBuffer:
@@ -281,7 +279,7 @@ class Main():
         
         self.minutes, H_M, d_m_Y = Date.get('%M', '%H:%M', '%d.%m.%Y' )
 
-        w = self.weight / 2
+        w = self.width / 2
         theme = self.theme
 
         self.setFont( 'font.otf', 100 )
@@ -305,7 +303,7 @@ class Main():
         
         self.setFont( 'font.ttf', 20 )
         w1, h1 = self.getTextSize('Сменить тему')
-        s = self.setText( self.weight - 5 - w1, self.height - 48 - h1, 'Сменить тему', theme['fg'])
+        s = self.setText( self.width - 5 - w1, self.height - 48 - h1, 'Сменить тему', theme['fg'])
         self.addButton(s, lambda: newTheme(), True)
         
         if not self.openCitys:
@@ -322,10 +320,13 @@ class Main():
                 s = self.setText(10, s.y2 + 5, tbl[i][0], theme['text'])  
                 self.addButton(s, lambda index = i: setCity(index), True)
         
-        
-        self.object.save('resources/tmp/temp.png')
-        self.setWallpaper('resources/tmp/temp.png')               
-    
+        try:
+            self.object.save('resources/tmp/temp.png')
+            self.setWallpaper('resources/tmp/temp.png')               
+        except:
+            if i > 2:
+                return
+            self.update(i + 1)
         
 
     def start(self):
